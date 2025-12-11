@@ -1,25 +1,21 @@
 name: Publish to npm
 
 on:
-  # 自动触发：推送标签时
+  release:
+    types: [published]
+  
   push:
     tags:
       - 'v*'
   
-  # 手动触发：点击按钮时
   workflow_dispatch:
     inputs:
       version:
-        description: '输入版本号 (格式: 1.0.0)'
+        description: '输入版本号（仅更新package.json，不自动提交）'
         required: true
         default: '1.0.0'
       is_beta:
-        description: '发布测试版？'
-        type: boolean
-        required: false
-        default: false
-      skip_tests:
-        description: '跳过测试？'
+        description: '是否是测试版？'
         type: boolean
         required: false
         default: false
@@ -27,14 +23,16 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     
     steps:
+      # 1. 检查代码
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       
+      # 2. 设置Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,11 +40,48 @@ jobs:
           registry-url: 'https://registry.npmjs.org/'
           cache: 'npm'
       
+      # 3. 配置 Git
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "github-actions@github.com"
+      
+      # 4. 安装依赖
       - name: Install dependencies
         run: npm ci
       
+      # 5. 运行测试
       - name: Run tests
-        if: !inputs.skip_tests || github.event_name != 'workflow_dispatch'
-        run: npm test || echo "测试跳过或失败，继续发布流程"
+        run: |
+          if [ -f package.json ] && npm run | grep -q " test"; then
+            npm test
+          else
+            echo "没有找到测试脚本，跳过测试"
+          fi
       
-      - name:
+      # 6. 构建项目
+      - name: Build project
+        run: |
+          if [ -f package.json ] && npm run | grep -q " build"; then
+            npm run build
+          else
+            echo "没有构建脚本，跳过构建"
+          fi
+      
+      # 7. 更新版本号（仅更新文件，不提交）
+      - name: Update version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ github.event.inputs.is_beta }}" == "true" ]]; then
+            npm version ${{ github.event.inputs.version }}-beta.${{ github.run_number }} --no-git-tag-version --allow-same-version
+          else
+            npm version ${{ github.event.inputs.version }} --no-git-tag-version --allow-same-version
+          fi
+          echo "版本已更新至: v$(node -p "require('./package.json').version")"
+          echo "注意：需要手动提交版本更新到 Git"
+      
+      # 8. 发布到npm
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
