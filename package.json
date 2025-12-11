@@ -1,0 +1,16 @@
+{
+  "name": "gdapitogeojson",
+  "version": "1.0.1",
+  "description": "高德API 鼠标工具 多边形编辑器 得出新的边界数据 转换为 GeoJSON",
+  "main": "ff.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["amap", "geojson", "wkt", "converter", "PolygonEditor", "mouseTool", "边界", "高德"],
+  "author": "MFZXL",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fuzexu/GdApiToGeojson.git"
+  }
+}
