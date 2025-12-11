@@ -59,7 +59,7 @@ jobs:
           
       - run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ${{secrets.NPMM_TOKEN}}
           
       # 对于手动触发，可选地可以创建 git tag
       - name: Create git tag for manual publish
