@@ -4,9 +4,18 @@
   "description": "高德API 鼠标工具 多边形编辑器 得出新的边界数据 转换为 GeoJSON",
   "main": "ff.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "keywords": ["amap", "geojson", "wkt", "converter", "PolygonEditor", "mouseTool", "边界", "高德"],
+  "keywords": [
+    "amap",
+    "geojson",
+    "wkt",
+    "converter",
+    "PolygonEditor",
+    "mouseTool",
+    "边界",
+    "高德"
+  ],
   "author": "MFZXL",
   "license": "MIT",
   "repository": {
