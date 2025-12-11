@@ -88,5 +88,5 @@ jobs:
       - name: Publish to npm with OIDC
         run: npm publish --provenance  # 添加 --provenance 参数
         env:
-          # 关键修改：使用 GITHUB_TOKEN 而不是 NPM_TOKEN
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 关键修改：使用 NPM_TOKEN  而不是 NPM_TOKEN
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN  }}
