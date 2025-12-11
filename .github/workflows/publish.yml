@@ -3,85 +3,40 @@ name: Publish to npm
 on:
   release:
     types: [published]
-  
   push:
     tags:
       - 'v*'
-  
   workflow_dispatch:
     inputs:
       version:
-        description: '输入版本号（仅更新package.json，不自动提交）'
+        description: '输入版本号'
         required: true
         default: '1.0.0'
-      is_beta:
-        description: '是否是测试版？'
-        type: boolean
-        required: false
-        default: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
-      # 1. 检查代码
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+      - uses: actions/checkout@v4
       
-      # 2. 设置Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
-          cache: 'npm'
       
-      # 3. 配置 Git
-      - name: Configure Git
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
+      - run: npm ci
       
-      # 4. 安装依赖
-      - name: Install dependencies
-        run: npm ci
-      
-      # 5. 运行测试
-      - name: Run tests
-        run: |
-          if [ -f package.json ] && npm run | grep -q " test"; then
-            npm test
-          else
-            echo "没有找到测试脚本，跳过测试"
-          fi
-      
-      # 6. 构建项目
-      - name: Build project
-        run: |
-          if [ -f package.json ] && npm run | grep -q " build"; then
-            npm run build
-          else
-            echo "没有构建脚本，跳过构建"
-          fi
-      
-      # 7. 更新版本号（仅更新文件，不提交）
-      - name: Update version
+      - name: Update version (manual only)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [[ "${{ github.event.inputs.is_beta }}" == "true" ]]; then
-            npm version ${{ github.event.inputs.version }}-beta.${{ github.run_number }} --no-git-tag-version --allow-same-version
-          else
-            npm version ${{ github.event.inputs.version }} --no-git-tag-version --allow-same-version
-          fi
-          echo "版本已更新至: v$(node -p "require('./package.json').version")"
-          echo "注意：需要手动提交版本更新到 Git"
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "版本更新完成"
       
-      # 8. 发布到npm
-      - name: Publish to npm
-        run: npm publish
+      - name: Publish with OIDC
+        run: npm publish --provenance
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
