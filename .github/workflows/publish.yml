@@ -2,6 +2,12 @@ name: Publish to npm
 on:
   release:
     types: [created]
+  workflow_dispatch:  # 添加这一行以支持手动触发
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
 jobs:
   build:
     runs-on: ubuntu-latest
