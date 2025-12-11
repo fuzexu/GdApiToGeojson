@@ -1,17 +1,13 @@
 name: Publish to npm
 
-# 触发条件 - 三选一即可
 on:
-  # 选项A：使用GitHub Release触发（推荐）
   release:
-    types: [published]  # 必须是 published，不是 created
+    types: [published]
   
-  # 选项B：使用标签触发
   push:
     tags:
-      - 'v*'  # 匹配 v1.0.0, v2.3.4 等
+      - 'v*'
   
-  # 选项C：手动触发
   workflow_dispatch:
     inputs:
       version:
@@ -32,20 +28,29 @@ jobs:
       # 1. 检查代码
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 添加 token 用于推送
+          fetch-depth: 0  # 获取完整历史记录
       
       # 2. 设置Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'  # 推荐用20，兼容性更好
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
-          cache: 'npm'  # 添加缓存加速
+          cache: 'npm'
       
-      # 3. 安装依赖
+      # 3. 配置 Git（提前配置）
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "github-actions@github.com"
+      
+      # 4. 安装依赖
       - name: Install dependencies
         run: npm ci
       
-      # 4. 运行测试（可选）
+      # 5. 运行测试（修改后的版本）
       - name: Run tests
         run: |
           if [ -f package.json ] && npm run | grep -q " test"; then
@@ -54,7 +59,7 @@ jobs:
             echo "没有找到测试脚本，跳过测试"
           fi
       
-      # 5. 构建项目（如果有）
+      # 6. 构建项目（如果有）
       - name: Build project
         run: |
           if [ -f package.json ] && npm run | grep -q " build"; then
@@ -63,7 +68,7 @@ jobs:
             echo "没有构建脚本，跳过构建"
           fi
       
-      # 6. 更新版本号
+      # 7. 更新版本号（仅手动触发时）
       - name: Update version
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -72,13 +77,12 @@ jobs:
           else
             npm version ${{ github.event.inputs.version }}
           fi
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
           git add package.json package-lock.json
           git commit -m "Release v$(node -p "require('./package.json').version")"
-          git push
+          git push origin HEAD:${GITHUB_REF_NAME}  # 推送到当前分支
       
-      # 7. 发布到npm
+      # 8. 发布到npm
       - name: Publish to npm
         run: npm publish
         env:
