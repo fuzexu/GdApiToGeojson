@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '输入版本号'
+        description: '输入版本号（仅更新package.json，不自动提交）'
         required: true
         default: '1.0.0'
       is_beta:
@@ -29,8 +29,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # 添加 token 用于推送
-          fetch-depth: 0  # 获取完整历史记录
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       
       # 2. 设置Node.js
       - name: Setup Node.js
@@ -40,7 +40,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org/'
           cache: 'npm'
       
-      # 3. 配置 Git（提前配置）
+      # 3. 配置 Git
       - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions"
@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # 5. 运行测试（修改后的版本）
+      # 5. 运行测试
       - name: Run tests
         run: |
           if [ -f package.json ] && npm run | grep -q " test"; then
@@ -59,7 +59,7 @@ jobs:
             echo "没有找到测试脚本，跳过测试"
           fi
       
-      # 6. 构建项目（如果有）
+      # 6. 构建项目
       - name: Build project
         run: |
           if [ -f package.json ] && npm run | grep -q " build"; then
@@ -68,19 +68,17 @@ jobs:
             echo "没有构建脚本，跳过构建"
           fi
       
-      # 7. 更新版本号（仅手动触发时）
+      # 7. 更新版本号（仅更新文件，不提交）
       - name: Update version
         if: github.event_name == 'workflow_dispatch'
         run: |
           if [[ "${{ github.event.inputs.is_beta }}" == "true" ]]; then
-            npm version ${{ github.event.inputs.version }}-beta.${{ github.run_number }}
+            npm version ${{ github.event.inputs.version }}-beta.${{ github.run_number }} --no-git-tag-version --allow-same-version
           else
-            npm version ${{ github.event.inputs.version }}
+            npm version ${{ github.event.inputs.version }} --no-git-tag-version --allow-same-version
           fi
-          
-          git add package.json package-lock.json
-          git commit -m "Release v$(node -p "require('./package.json').version")"
-          git push origin HEAD:${GITHUB_REF_NAME}  # 推送到当前分支
+          echo "版本已更新至: v$(node -p "require('./package.json').version")"
+          echo "注意：需要手动提交版本更新到 Git"
       
       # 8. 发布到npm
       - name: Publish to npm
