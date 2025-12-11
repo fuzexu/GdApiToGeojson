@@ -69,4 +69,14 @@ mouseTool.on('draw', function(event) {
 ```bash
 # 克隆项目到本地
 git clone https://github.com/fuzexu/GdApiToGeojson.git
+```
 
+## 致谢
+
+本项目部分代码参考/使用了以下开源项目：
+
+- [Esri/terraformer-wkt-parser](https://github.com/Esri/terraformer-wkt-parser) - 用于 WKT 生成的相关功能 convert
+  - 版权: Copyright (c) 2013-2018 Esri, Inc
+  - 许可证: MIT
+
+特别感谢这些项目的贡献者们。
